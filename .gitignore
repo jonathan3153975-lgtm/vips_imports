@@ -1,0 +1,44 @@
+# Ambiente
+.env
+.env.*
+!.env.example
+
+# Anexos
+/app/uploads/
+/app/uploads_suporte/
+/app/uploads_oficios/
+/app/uploads_recursos/
+
+# Libs
+/public/assets/ckeditor/*
+
+/public/assets/css/bootstrap-5.3.3/*
+/public/assets/css/fontawesome-6.5.2/*
+/public/assets/css/multiselect/*
+/public/assets/css/sweetalert2/*
+/public/assets/css/webfonts/*
+/public/assets/css/katex/*
+
+/public/assets/docs/*
+
+/public/assets/js/bootstrap-5.3.3/*
+/public/assets/js/fontawesome-6.5.2/*
+/public/assets/js/jquery-3.7.1/*
+/public/assets/js/jquery-ui-1.14.1/*
+/public/assets/js/jquery.maskedinput-1.1.4/*
+/public/assets/js/multiselect/*
+/public/assets/js/sweetalert2/*
+
+/public/assets/js/chart.js-4.5.1/*
+/public/assets/js/chartjs-plugin-annotation-1.4.0/*
+/public/assets/js/chartjs-plugin-datalabels-2.2.0/*
+/public/assets/js/html2pdf/*
+/public/assets/js/marked-15.0.12/*
+/public/assets/js/katex/*
+/public/assets/js/auto-render/*
+
+/public/assets/mp3/*
+
+/public/assets/PHPGangsta/*
+
+/public/assets/PHPMailer-master/*
