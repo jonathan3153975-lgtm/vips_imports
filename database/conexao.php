@@ -10,11 +10,21 @@ Class Connection {
             return;
         }
 
-        $envPath = __DIR__ . '/.env';
-        
-        
-        if (!file_exists($envPath)) {
-            throw new Exception('.env não encontrado em: ' . $envPath);
+        $candidatos = [
+            dirname(__DIR__) . '/.env', // raiz do projeto
+            __DIR__ . '/.env',          // pasta database (fallback)
+        ];
+
+        $envPath = null;
+        foreach ($candidatos as $caminho) {
+            if (file_exists($caminho)) {
+                $envPath = $caminho;
+                break;
+            }
+        }
+
+        if ($envPath === null) {
+            throw new Exception('.env não encontrado. Procurado em: ' . implode(' ou ', $candidatos));
         }
 
 
