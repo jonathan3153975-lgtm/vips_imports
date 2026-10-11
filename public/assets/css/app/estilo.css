@@ -393,6 +393,8 @@ body {
   border: none;
   background: none;
   font-size: 1rem;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 /* ---- Topbar ---- */
@@ -486,7 +488,9 @@ body {
 .kpi.red { background: var(--kpi-red-bg); }
 .kpi.blue { background: var(--kpi-blue-bg); }
 .kpi.darkblue { background: var(--kpi-dark-bg); }
+.kpi.green { background: linear-gradient(135deg, #0a7d3c, #23c876); }
 .kpi.outline { background: var(--kpi-white-bg); color: var(--app-text); border: 1px solid var(--app-border); }
+.kpi.outline-danger { background: var(--kpi-white-bg); color: var(--brand-red); border: 1px solid rgba(224, 38, 38, .45); }
 
 .kpi .ico {
   position: absolute;
@@ -503,10 +507,104 @@ body {
 .kpi.outline .ico { color: var(--brand-blue); }
 .kpi .chip { background: rgba(255,255,255,.22); border-radius: 30px; padding: .1rem .7rem; font-size: .76rem; }
 
+/* ---- Stat cards viram lista no mobile ---- */
+@media (max-width: 767.98px) {
+  .stat-cards { display: flex; flex-direction: column; gap: .5rem; }
+  .stat-cards > [class*="col"] { width: 100%; max-width: 100%; flex: 0 0 100%; }
+
+  .stat-cards .kpi {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: .85rem;
+    row-gap: .3rem;
+    padding: .8rem .95rem;
+    background: var(--app-surface) !important;
+    color: var(--app-text);
+    border: 1px solid var(--app-border);
+    border-radius: var(--radius-sm);
+    box-shadow: none;
+  }
+
+  .stat-cards .kpi .ico {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    position: static;
+    transform: none;
+    opacity: 1;
+    font-size: 1.1rem;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: rgba(10, 132, 255, .12);
+    color: var(--brand-blue-2);
+  }
+
+  .stat-cards .kpi small { grid-column: 2; grid-row: 1; opacity: 1; color: var(--app-text-muted); }
+  .stat-cards .kpi .value { grid-column: 3; grid-row: 1; justify-self: end; text-align: right; font-size: 1.2rem; margin-top: 0; }
+
+  .stat-cards .kpi .footer {
+    grid-column: 2 / 4;
+    grid-row: 2;
+    margin-top: 0;
+    color: var(--app-text-muted);
+  }
+
+  .stat-cards .kpi.outline-danger { color: var(--brand-red); }
+
+  .stat-cards .kpi .chip {
+    background: var(--app-surface-2);
+    color: var(--app-text-muted) !important;
+    border: 1px solid var(--app-border);
+  }
+
+  .stat-cards .kpi.green .ico { background: rgba(35, 200, 118, .16); color: #0c9a4f; }
+  .stat-cards .kpi.red .ico      { background: rgba(224, 38, 38, .12);  color: var(--brand-red); }
+  .stat-cards .kpi.blue .ico     { background: rgba(10, 132, 255, .12); color: var(--brand-blue-2); }
+  .stat-cards .kpi.darkblue .ico { background: rgba(13, 79, 174, .12);  color: var(--brand-blue); }
+  .stat-cards .kpi.outline .ico  { background: rgba(10, 132, 255, .12); color: var(--brand-blue); }
+  .stat-cards .kpi.outline-danger .ico { background: rgba(224, 38, 38, .12); color: var(--brand-red); }
+}
+
+/* ---- Cabeçalho de seção empilhado no mobile ---- */
+@media (max-width: 767.98px) {
+  .section-head--stack { flex-wrap: wrap; align-items: center; row-gap: .6rem; }
+  .section-head--stack h5 { display: flex; align-items: center; width: 100%; margin: 0; }
+  .section-head--stack .section-head-actions { width: 100%; justify-content: space-between; }
+}
+
+/* ---- Gastos como cards (mobile) ---- */
+.gasto-cards { display: flex; flex-direction: column; gap: .6rem; padding: 1rem; }
+.gasto-card {
+  border: 1px solid var(--app-border);
+  border-radius: var(--radius-sm);
+  background: var(--app-surface-2);
+  padding: .8rem .9rem;
+  display: flex;
+  flex-direction: column;
+  gap: .7rem;
+}
+.gasto-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: .6rem; }
+.gasto-card-main { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; }
+.gasto-card-desc { font-weight: 700; color: var(--app-text); }
+.gasto-card-date { color: var(--app-text-muted); font-size: .8rem; white-space: nowrap; }
+.gasto-card-date--wrap { white-space: normal; text-align: right; }
+.gasto-card-bottom { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+.gasto-card-bottom--stacked { flex-direction: column; align-items: stretch; gap: .6rem; }
+.gasto-card-actions { display: flex; gap: .5rem; }
+.gasto-card-actions > *, .gasto-card-actions > form { flex: 1 1 0; min-width: 0; }
+.gasto-card-actions .btn { width: 100%; padding-left: .4rem; padding-right: .4rem; }
+.gasto-card-bottom--stacked .gasto-card-value { text-align: right; }
+.gasto-card-value { font-weight: 800; color: var(--app-text); font-size: 1.05rem; }
+
 /* ---- Cards / sections ---- */
 .section-card { background: var(--app-surface); border: 1px solid var(--app-border); border-radius: var(--radius); box-shadow: var(--app-shadow); }
 .section-card .section-head { display: flex; align-items: center; justify-content: space-between; padding: 1.05rem 1.25rem; border-bottom: 1px solid var(--app-border); gap: .6rem; }
-.section-card .section-head h5 { font-weight: 700; margin: 0; font-size: 1rem; }
+.section-card .section-head h5 { font-weight: 700; margin: 0; font-size: 1rem; display: flex; align-items: center; }
 .section-card .section-head .ico { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: var(--brand-blue); color: #fff; font-size: .9rem; }
 .section-card .card-chart { height: 300px; padding: 1.1rem 1.25rem; }
 
@@ -574,6 +672,7 @@ body {
   font-weight: 600;
   padding: .4rem .2rem;
   border-radius: 12px;
+  text-decoration: none;
   transition: color .15s ease, background .15s ease;
 }
 

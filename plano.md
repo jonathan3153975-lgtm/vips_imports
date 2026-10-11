@@ -62,9 +62,40 @@ Entidades principais: `usuarios`, `viagens`, `gastos`, `itens`, `vendas`
 ## Etapas de implementação
 
 1. [x] **Fase 0 — Protótipo visual**: documento `plano.md`, login e painel.
-2. [ ] **Fase 1 — Estrutura**: banco de dados, autenticação real, sessões.
-3. [ ] **Fase 2 — Módulo Viagens**: CRUD e status.
-4. [ ] **Fase 3 — Gastos e Compras**: CRUD vinculados à viagem.
+2. [x] **Fase 1 — Estrutura**: banco de dados, autenticação real e sessões
+   (`AuthController`, senhas com `password_hash`/`password_verify`, guardas de rota).
+3. [x] **Fase 2 — Módulo Viagens**: CRUD e status (`aberta`/`encerrada`).
+4. [~] **Fase 3 — Gastos e Compras**: CRUD vinculados à viagem — **entregue**;
+   pendente apenas a revisão de relatórios. Gastos e Compras contam com leitura
+   de recibo/nota por IA (Gemini) em campo único ou em lote (bloco de itens).
 5. [ ] **Fase 4 — Vendas e estoque**: baixa de estoque e resultados.
-6. [ ] **Fase 5 — Relatórios e painel geral**: indicadores e gráficos.
+6. [ ] **Fase 5 — Relatórios e painel geral**: KPIs reais e gráficos consolidados.
 7. [ ] **Fase 6 — Finalização**: validações, segurança e deploy.
+
+## Módulos entregues
+
+| Módulo  | Status | Observações |
+|---------|--------|-------------|
+| Login   | ✅ | Login/logout, sessões, último acesso |
+| Viagens | ✅ | CRUD, status aberta/encerrada, orçamento |
+| Gastos  | ✅ | CRUD por categoria; IA lê recibo/nota (campo único + conciliação) |
+| Compras | ✅ | CRUD de itens; **IA lê a nota e lança em bloco (item a item)** |
+| Painel  | ✅ | KPIs reais (total gasto, total comprado, viagens) |
+
+## Módulo Compras (detalhes)
+
+- Registro item a item por viagem: produto, marca, categoria
+  digitáveis com sugestões (novas marcas/categorias passam a ser sugeridas
+  nos lançamentos seguintes), quantidade, valor, loja, data, moeda e cotação
+  (dólar com cotação automática BCB/PTAX).
+- Galeria de fotos por item (`compra_fotos`, upload JPG/PNG/WEBP até 2 MB,
+  armazenadas em `public/uploads/compras/`, protegidas por `.gitignore`).
+- Leitura por IA (`LeituraReceita::lerItens` + `?modo=itens`): retorna
+  `{loja, moeda, data, itens[]}` e o formulário do bloco é pré-preenchido.
+- Tabelas: `compras` (valor/cotação unitários + `valor_brl` calculado) e
+  `compra_fotos`. Somas por categoria/total usam `valor_brl * quantidade`.
+
+## Próximos passos
+
+- Módulo Vendas com baixa de estoque e custo por peça.
+- KPIs de lucro e gráficos reais no painel (hoje ilustrativos).

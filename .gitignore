@@ -8,6 +8,7 @@
 /app/uploads_suporte/
 /app/uploads_oficios/
 /app/uploads_recursos/
+/public/uploads/compras/*
 
 # Libs
 /public/assets/ckeditor/*

@@ -1,8 +1,26 @@
 <?php
 // =====================================================================
-// VIP Imports — Tela de Login (protótipo visual)
+// VIP Imports — Tela de Login
 // =====================================================================
+session_start();
+
+// Usuário já autenticado não precisa ver o login.
+if (isset($_SESSION['usuario'])) {
+    header('Location: painel.php');
+    exit;
+}
+
 $paginaAtual = 'login';
+
+$mensagens = [
+    'campos'      => 'Informe o e-mail e a senha.',
+    'credenciais' => 'E-mail ou senha inválidos.',
+    'sistema'     => 'Não foi possível acessar o sistema. Tente novamente.',
+];
+
+$erro    = $_GET['erro'] ?? '';
+$alerta  = $mensagens[$erro] ?? null;
+$sucesso = (($_GET['msg'] ?? '') === 'logout') ? 'Sessão encerrada com sucesso.' : null;
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR" data-bs-theme="light">
@@ -12,10 +30,10 @@ $paginaAtual = 'login';
   <title>Acessar — VIP Imports</title>
 
   <!-- Libs -->
-  <link rel="stylesheet" href="./assets/css/bootstrap-5.3.3/bootstrap.min.css">
-  <link rel="stylesheet" href="./assets/css/fontawesome-6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="../../public/assets/css/bootstrap-5.3.3/bootstrap.min.css">
+  <link rel="stylesheet" href="../../public/assets/css/fontawesome-6.5.2/css/all.min.css">
   <!-- App -->
-  <link rel="stylesheet" href="./assets/css/app/estilo.css">
+  <link rel="stylesheet" href="../../public/assets/css/app/estilo.css">
 </head>
 <body>
 
@@ -75,12 +93,25 @@ $paginaAtual = 'login';
           </div>
           <p class="text-muted" style="font-size:.9rem; margin-top:.45rem;">Entre com suas credenciais para continuar</p>
 
-          <form action="painel.php" method="get" class="mt-4">
+          <?php if ($alerta !== null): ?>
+            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mt-3 mb-0" role="alert" style="font-size:.86rem;">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              <span><?= htmlspecialchars($alerta) ?></span>
+            </div>
+          <?php elseif ($sucesso !== null): ?>
+            <div class="alert alert-success d-flex align-items-center gap-2 py-2 px-3 mt-3 mb-0" role="alert" style="font-size:.86rem;">
+              <i class="fa-solid fa-circle-check"></i>
+              <span><?= htmlspecialchars($sucesso) ?></span>
+            </div>
+          <?php endif; ?>
+
+          <form action="../controller/AuthController.php" method="post" class="mt-4">
+            <input type="hidden" name="acao" value="login">
             <div class="mb-3">
               <label for="email" class="form-label">E-mail</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
-                <input type="email" class="form-control login-input" id="email" placeholder="voce@exemplo.com" required autofocus>
+                <input type="email" name="email" class="form-control login-input" id="email" placeholder="voce@exemplo.com" required autofocus>
               </div>
             </div>
 
@@ -88,7 +119,7 @@ $paginaAtual = 'login';
               <label for="senha" class="form-label">Senha</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="fa-solid fa-key"></i></span>
-                <input type="password" class="form-control login-input" id="senha" placeholder="••••••••" required>
+                <input type="password" name="senha" class="form-control login-input" id="senha" placeholder="••••••••" required>
                 <button class="input-group-text pass-eye" type="button" data-pass-eye title="Mostrar senha">
                   <i class="fa-solid fa-eye"></i>
                 </button>
@@ -122,9 +153,9 @@ $paginaAtual = 'login';
   </div>
 
   <!-- Libs -->
-  <script src="./assets/js/jquery-3.7.1/jquery.min.js"></script>
-  <script src="./assets/js/bootstrap-5.3.3/bootstrap.bundle.min.js"></script>
+  <script src="../../public/assets/js/jquery-3.7.1/jquery.min.js"></script>
+  <script src="../../public/assets/js/bootstrap-5.3.3/bootstrap.bundle.min.js"></script>
   <!-- App -->
-  <script src="./assets/js/app/app.js"></script>
+  <script src="../../public/assets/js/app/app.js"></script>
 </body>
 </html>
