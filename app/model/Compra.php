@@ -40,10 +40,12 @@ class Compra
     public function listarPorViagem(int $viagemId, int $usuarioId): array
     {
         $sql = 'SELECT c.id, c.viagem_id, c.categoria, c.produto, c.marca, c.quantidade,
-                       c.valor, c.moeda, c.cotacao, c.valor_brl, c.loja, c.data_compra, c.observacoes, c.publicada
+                       c.valor, c.moeda, c.cotacao, c.valor_brl, c.loja, c.data_compra, c.observacoes, c.publicada,
+                       p.vendido, p.preco AS preco_venda
                 FROM compras c
                 INNER JOIN viagens v ON v.id = c.viagem_id
-                WHERE c.viagem_id = :v AND v.usuario_id = :u AND c.publicada = 0
+                LEFT JOIN loja_produtos p ON p.compra_id = c.id
+                WHERE c.viagem_id = :v AND v.usuario_id = :u
                 ORDER BY c.data_compra DESC, c.id DESC';
 
         $stmt = $this->conn->prepare($sql);
@@ -57,6 +59,9 @@ class Compra
             $item['custo_unitario'] = $item['quantidade'] > 0
                 ? round((float) $item['valor'] / (int) $item['quantidade'], 2)
                 : (float) $item['valor'];
+            $item['publicada']   = (bool) $item['publicada'];
+            $item['vendido']     = (bool) $item['vendido'];
+            $item['preco_venda'] = $item['preco_venda'] !== null ? (float) $item['preco_venda'] : null;
         }
         unset($item);
 

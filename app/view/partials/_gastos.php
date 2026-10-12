@@ -96,6 +96,7 @@ $mostrarCards = $mostrarCards ?? true;
                   <input type="hidden" name="id" value="<?= (int) $g['id'] ?>">
                   <input type="hidden" name="viagem_id" value="<?= $viagemId ?>">
                   <input type="hidden" name="origem" value="<?= htmlspecialchars($origem) ?>">
+                  <input type="hidden" name="aba" value="<?= htmlspecialchars($aba ?? '') ?>">
                   <button type="submit" class="btn btn-sm btn-light border text-danger" title="Excluir">
                     <i class="fa-solid fa-trash"></i>
                   </button>
@@ -126,23 +127,26 @@ $mostrarCards = $mostrarCards ?? true;
             </div>
             <div class="gasto-card-date"><?= date('d/m/Y', strtotime($g['data_gasto'])) ?></div>
           </div>
-          <div class="gasto-card-bottom">
-            <form action="../controller/GastoController.php" method="post" class="d-inline"
-                  onsubmit="return confirm('Excluir este gasto?');">
-              <input type="hidden" name="acao" value="excluir">
-              <input type="hidden" name="id" value="<?= (int) $g['id'] ?>">
-              <input type="hidden" name="viagem_id" value="<?= $viagemId ?>">
-              <input type="hidden" name="origem" value="<?= htmlspecialchars($origem) ?>">
-              <button type="submit" class="btn btn-sm btn-light border text-danger" title="Excluir">
-                <i class="fa-solid fa-trash me-1"></i>Excluir
-              </button>
-            </form>
+          <div class="gasto-card-bottom gasto-card-bottom--stacked">
             <div class="gasto-card-value">
               <div style="white-space:nowrap;"><?= $fmt($g['moeda'], $g['valor']) ?>
                 <?php if ($g['moeda'] === 'USD'): ?>
                   <small class="text-muted fw-normal">≈ <?= $moeda($g['valor_brl']) ?></small>
                 <?php endif; ?>
               </div>
+            </div>
+            <div class="gasto-card-actions">
+              <form action="../controller/GastoController.php" method="post" class="m-0"
+                    onsubmit="return confirm('Excluir este gasto?');">
+                <input type="hidden" name="acao" value="excluir">
+                <input type="hidden" name="id" value="<?= (int) $g['id'] ?>">
+                <input type="hidden" name="viagem_id" value="<?= $viagemId ?>">
+                <input type="hidden" name="origem" value="<?= htmlspecialchars($origem) ?>">
+                <input type="hidden" name="aba" value="<?= htmlspecialchars($aba ?? '') ?>">
+                <button type="submit" class="btn btn-sm btn-light border text-danger w-100" title="Excluir">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </form>
             </div>
           </div>
         </div>
@@ -159,6 +163,7 @@ $mostrarCards = $mostrarCards ?? true;
         <input type="hidden" name="acao" value="criar">
         <input type="hidden" name="viagem_id" value="<?= $viagemId ?>">
         <input type="hidden" name="origem" value="<?= htmlspecialchars($origem) ?>">
+        <input type="hidden" name="aba" value="<?= htmlspecialchars($aba ?? '') ?>">
 
         <div class="modal-header border-0 pb-0">
           <h5 class="modal-title" id="modalGastoLabel">

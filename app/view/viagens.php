@@ -12,6 +12,7 @@ if (!isset($_SESSION['usuario'])) {
 require_once dirname(__DIR__) . '/model/Viagem.php';
 require_once dirname(__DIR__) . '/model/Gasto.php';
 require_once dirname(__DIR__) . '/model/Compra.php';
+require_once dirname(__DIR__) . '/model/Estoque.php';
 
 $usuario      = $_SESSION['usuario'];
 $usuarioId    = (int) $usuario['id'];
@@ -67,6 +68,7 @@ $totaisCompras  = array_fill_keys(Compra::CATEGORIAS, 0.0);
 $totalCompras   = 0.0;
 $qtdItens       = 0;
 $marcasDistintas = 0;
+$totalVendido   = 0.0;
 if ($viagemAberta) {
     $viagemIdAberta = (int) $viagemAberta['id'];
     $gastos     = $gastoModel->listarPorViagem($viagemIdAberta, $usuarioId);
@@ -78,9 +80,21 @@ if ($viagemAberta) {
     $totalCompras    = $compraModel->totalPorViagem($viagemIdAberta, $usuarioId);
     $qtdItens        = array_sum(array_column($compras, 'quantidade'));
     $marcasDistintas = $compraModel->contarMarcas($viagemIdAberta, $usuarioId);
+    $totalVendido    = (new Estoque())->totalVendidoPorViagem($viagemIdAberta, $usuarioId);
 }
 
 $totalViagem = $totalGeral + $totalCompras;
+
+$lucro       = $totalVendido - $totalViagem;
+$lucroPct    = $totalViagem > 0 ? ($lucro / $totalViagem) * 100 : 0.0;
+$lucroClasse = $lucro < 0 ? 'red' : ($lucroPct <= 20 ? 'blue' : 'green');
+$lucroPctFmt = number_format($lucroPct, 1, ',', '.') . '%';
+
+$abasViagem = ['gastos', 'compras', 'historico'];
+$aba = $_GET['aba'] ?? ($viagemAberta ? 'gastos' : 'historico');
+if (!in_array($aba, $abasViagem, true)) {
+    $aba = $viagemAberta ? 'gastos' : 'historico';
+}
 
 $pctDe = fn($valor) => $totalViagem > 0 ? number_format(($valor / $totalViagem) * 100, 1, ',', '.') . '%' : '0,0%';
 
@@ -138,7 +152,7 @@ include __DIR__ . '/partials/app_head.php';
         <?php if ($viagemAberta): ?>
 
           <div class="row g-3 mb-3 stat-cards">
-            <div class="col-6 col-md-6 col-xl-3">
+            <div class="col-6 col-md-4 col-xl">
               <div class="kpi darkblue h-100">
                 <small>Total da viagem</small>
                 <div class="value" style="font-size:1.3rem;"><?= $bronze($totalViagem) ?></div>
@@ -146,7 +160,7 @@ include __DIR__ . '/partials/app_head.php';
                 <i class="fa-solid fa-route ico"></i>
               </div>
             </div>
-            <div class="col-6 col-md-6 col-xl-3">
+            <div class="col-6 col-md-4 col-xl">
               <div class="kpi blue h-100">
                 <small>Total de gastos</small>
                 <div class="value" style="font-size:1.3rem;"><?= $bronze($totalGeral) ?></div>
@@ -154,20 +168,27 @@ include __DIR__ . '/partials/app_head.php';
                 <i class="fa-solid fa-wallet ico"></i>
               </div>
             </div>
-            <div class="col-6 col-md-6 col-xl-3">
+            <div class="col-6 col-md-4 col-xl">
               <div class="kpi green h-100">
                 <small>Total de compras</small>
                 <div class="value" style="font-size:1.3rem;"><?= $bronze($totalCompras) ?></div>
-                <div class="footer"><?= (int) $qtdItens ?> item<?= $qtdItens === 1 ? '' : 'ns' ?> comprados</div>
+                <div class="footer"><?= (int) $qtdItens ?> <?= $qtdItens === 1 ? 'item' : 'itens' ?> comprados</div>
                 <i class="fa-solid fa-cart-shopping ico"></i>
               </div>
             </div>
-            <div class="col-6 col-md-6 col-xl-3">
+            <div class="col-6 col-md-4 col-xl">
               <div class="kpi outline h-100">
-                <small>Em breve</small>
-                <div class="value" style="font-size:1.3rem;">—</div>
-                <div class="footer">reservado para cálculos futuros</div>
-                <i class="fa-solid fa-chart-line ico"></i>
+                <small>Total vendido</small>
+                <div class="value" style="font-size:1.3rem;"><?= $bronze($totalVendido) ?></div>
+                <i class="fa-solid fa-arrow-trend-up ico"></i>
+              </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl">
+              <div class="kpi <?= $lucroClasse ?> h-100">
+                <small>Lucro</small>
+                <div class="value" style="font-size:1.3rem;"><?= $bronze($lucro) ?></div>
+                <div class="footer text-muted"><?= $lucroPctFmt ?></div>
+                <i class="fa-solid fa-sack-dollar ico"></i>
               </div>
             </div>
           </div>
@@ -207,37 +228,91 @@ include __DIR__ . '/partials/app_head.php';
             </div>
           </div>
 
-          <!-- Gastos da viagem em aberto -->
-          <h5 class="mb-3"><i class="fa-solid fa-coins text-brand-blue me-1"></i> Gastos da viagem em aberto</h5>
-          <?php
-          $viagemSelecionada = $viagemAberta;
-          $origem = 'viagens';
-          $mostrarCards = false;
-          include __DIR__ . '/partials/_gastos.php';
-          ?>
-          <div class="mb-4"></div>
-
-          <!-- Compras da viagem em aberto -->
-          <h5 class="mb-3"><i class="fa-solid fa-cart-shopping text-brand-blue me-1"></i> Compras da viagem em aberto</h5>
-          <?php
-          $viagemSelecionada = $viagemAberta;
-          $itens        = $compras;
-          $totais       = $totaisCompras;
-          $totalGeral   = $totalCompras;
-          $origem       = 'viagens';
-          $mostrarCards = false;
-          $simples      = true;
-          include __DIR__ . '/partials/_compras.php';
-          ?>
-          <div class="mb-4"></div>
-        <?php else: ?>
-          <div class="section-card mb-4">
-            <div class="p-4 text-center text-muted">
-              <i class="fa-solid fa-lock me-1"></i>
-              Não há viagem em aberto. Use o botão <strong>Registrar viagem</strong> para liberar o lançamento de gastos.
-            </div>
-          </div>
         <?php endif; ?>
+
+        <!-- ===================== Abas da viagem ===================== -->
+        <ul class="nav nav-tabs d-none d-md-flex mb-4" id="abasViagem" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link <?= $aba === 'gastos' ? 'active' : '' ?>" data-valor="gastos"
+                    data-bs-toggle="tab" data-bs-target="#abaGastos" type="button" role="tab">
+              Gastos da viagem
+              <span class="badge rounded-pill ms-1 align-middle" aria-label="Lançamentos de gastos"
+                    style="background:rgba(59,80,124,.12);color:var(--app-muted);font-size:.66rem;">
+                <?= count($gastos) ?>
+              </span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link <?= $aba === 'compras' ? 'active' : '' ?>" data-valor="compras"
+                    data-bs-toggle="tab" data-bs-target="#abaCompras" type="button" role="tab">
+              Compras
+              <span class="badge rounded-pill ms-1 align-middle" aria-label="Itens comprados"
+                    style="background:rgba(45,144,105,.14);color:var(--app-ok);border:1px solid rgba(45,144,105,.3);font-size:.66rem;">
+                <?= (int) $qtdItens ?>
+              </span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link <?= $aba === 'historico' ? 'active' : '' ?>" data-valor="historico"
+                    data-bs-toggle="tab" data-bs-target="#abaHistorico" type="button" role="tab">
+              Histórico de viagem
+              <span class="badge rounded-pill ms-1 align-middle" aria-label="Viagens registradas"
+                    style="background:rgba(59,80,124,.12);color:var(--app-muted);font-size:.66rem;">
+                <?= count($viagens) ?>
+              </span>
+            </button>
+          </li>
+        </ul>
+
+        <select class="form-select d-md-none mb-3" id="selAbaViagem" aria-label="Seção da viagem">
+          <option value="gastos" <?= $aba === 'gastos' ? 'selected' : '' ?>>Gastos da viagem (<?= count($gastos) ?>)</option>
+          <option value="compras" <?= $aba === 'compras' ? 'selected' : '' ?>>Compras (<?= (int) $qtdItens ?>)</option>
+          <option value="historico" <?= $aba === 'historico' ? 'selected' : '' ?>>Histórico de viagem (<?= count($viagens) ?>)</option>
+        </select>
+
+        <div class="tab-content">
+
+          <div class="tab-pane fade <?= $aba === 'gastos' ? 'show active' : '' ?>" id="abaGastos" role="tabpanel">
+            <?php if ($viagemAberta): ?>
+              <?php
+              $viagemSelecionada = $viagemAberta;
+              $origem       = 'viagens';
+              $mostrarCards = false;
+              include __DIR__ . '/partials/_gastos.php';
+              ?>
+            <?php else: ?>
+              <div class="section-card mb-4">
+                <div class="p-4 text-center text-muted">
+                  <i class="fa-solid fa-lock me-1"></i>
+                  Não há viagem em aberto. Use o botão <strong>Registrar viagem</strong> para liberar o lançamento de gastos.
+                </div>
+              </div>
+            <?php endif; ?>
+          </div>
+
+          <div class="tab-pane fade <?= $aba === 'compras' ? 'show active' : '' ?>" id="abaCompras" role="tabpanel">
+            <?php if ($viagemAberta): ?>
+              <?php
+              $viagemSelecionada = $viagemAberta;
+              $itens        = $compras;
+              $totais       = $totaisCompras;
+              $totalGeral   = $totalCompras;
+              $origem       = 'viagens';
+              $mostrarCards = false;
+              $simples      = true;
+              include __DIR__ . '/partials/_compras.php';
+              ?>
+            <?php else: ?>
+              <div class="section-card mb-4">
+                <div class="p-4 text-center text-muted">
+                  <i class="fa-solid fa-lock me-1"></i>
+                  Não há viagem em aberto. Use o botão <strong>Registrar viagem</strong> para liberar o lançamento de compras.
+                </div>
+              </div>
+            <?php endif; ?>
+          </div>
+
+          <div class="tab-pane fade <?= $aba === 'historico' ? 'show active' : '' ?>" id="abaHistorico" role="tabpanel">
 
         <!-- Todas as viagens -->
         <div class="section-card">
@@ -285,7 +360,7 @@ include __DIR__ . '/partials/app_head.php';
                         <a href="compras.php?viagem=<?= (int) $v['id'] ?>" class="btn btn-sm btn-light border" title="Compras">
                           <i class="fa-solid fa-cart-shopping"></i>
                         </a>
-                        <a href="viagens.php?editar=<?= (int) $v['id'] ?>" class="btn btn-sm btn-light border" title="Editar">
+                        <a href="viagens.php?editar=<?= (int) $v['id'] ?>&aba=historico" class="btn btn-sm btn-light border" title="Editar">
                           <i class="fa-solid fa-pen"></i>
                         </a>
                         <?php if ($aberta): ?>
@@ -293,6 +368,7 @@ include __DIR__ . '/partials/app_head.php';
                                 onsubmit="return confirm('Finalizar a viagem <?= htmlspecialchars($v['destino'], ENT_QUOTES) ?>?');">
                             <input type="hidden" name="acao" value="finalizar">
                             <input type="hidden" name="id" value="<?= (int) $v['id'] ?>">
+                            <input type="hidden" name="aba" value="<?= htmlspecialchars($aba) ?>">
                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Finalizar viagem">
                               <i class="fa-solid fa-flag-checkered"></i>
                             </button>
@@ -328,34 +404,38 @@ include __DIR__ . '/partials/app_head.php';
                     <div class="gasto-card-date gasto-card-date--wrap"><?= $periodo ?></div>
                   </div>
                   <div class="gasto-card-bottom gasto-card-bottom--stacked">
+                    <div class="gasto-card-value"><?= $bronze($v['total_gasto']) ?></div>
                     <div class="gasto-card-actions">
-                      <a href="gastos.php?viagem=<?= (int) $v['id'] ?>" class="btn btn-sm btn-light border" title="Gastos">
-                        <i class="fa-solid fa-coins me-1"></i>Gastos
+                      <a href="gastos.php?viagem=<?= (int) $v['id'] ?>" class="btn btn-sm btn-light border w-100" title="Gastos">
+                        <i class="fa-solid fa-coins"></i>
                       </a>
-                      <a href="compras.php?viagem=<?= (int) $v['id'] ?>" class="btn btn-sm btn-light border" title="Compras">
-                        <i class="fa-solid fa-cart-shopping me-1"></i>Compras
+                      <a href="compras.php?viagem=<?= (int) $v['id'] ?>" class="btn btn-sm btn-light border w-100" title="Compras">
+                        <i class="fa-solid fa-cart-shopping"></i>
                       </a>
-                      <a href="viagens.php?editar=<?= (int) $v['id'] ?>" class="btn btn-sm btn-light border" title="Editar">
-                        <i class="fa-solid fa-pen me-1"></i>Editar
+                      <a href="viagens.php?editar=<?= (int) $v['id'] ?>&aba=historico" class="btn btn-sm btn-light border w-100" title="Editar">
+                        <i class="fa-solid fa-pen"></i>
                       </a>
                       <?php if ($aberta): ?>
                         <form action="../controller/ViagemController.php" method="post" class="m-0"
                               onsubmit="return confirm('Finalizar a viagem <?= htmlspecialchars($v['destino'], ENT_QUOTES) ?>?');">
                           <input type="hidden" name="acao" value="finalizar">
                           <input type="hidden" name="id" value="<?= (int) $v['id'] ?>">
-                          <button type="submit" class="btn btn-sm btn-outline-danger w-100 text-nowrap" title="Finalizar viagem">
-                            <i class="fa-solid fa-flag-checkered me-1"></i>Finalizar
+                          <input type="hidden" name="aba" value="<?= htmlspecialchars($aba) ?>">
+                          <button type="submit" class="btn btn-sm btn-outline-danger w-100" title="Finalizar viagem">
+                            <i class="fa-solid fa-flag-checkered"></i>
                           </button>
                         </form>
                       <?php endif; ?>
                     </div>
-                    <div class="gasto-card-value"><?= $bronze($v['total_gasto']) ?></div>
                   </div>
                 </div>
               <?php endforeach; ?>
             <?php endif; ?>
           </div>
         </div>
+          </div><!-- /abaHistorico -->
+
+        </div><!-- /tab-content -->
 
         <!-- Modal: registrar / editar viagem -->
         <div class="modal fade" id="modalViagem" tabindex="-1" aria-labelledby="modalViagemLabel" aria-hidden="true">
@@ -363,6 +443,7 @@ include __DIR__ . '/partials/app_head.php';
             <div class="modal-content card-br">
               <form action="../controller/ViagemController.php" method="post">
                 <input type="hidden" name="acao" value="<?= $editando ? 'atualizar' : 'criar' ?>">
+                <input type="hidden" name="aba" value="<?= htmlspecialchars($aba) ?>">
                 <?php if ($editando): ?>
                   <input type="hidden" name="id" value="<?= (int) $editando['id'] ?>">
                 <?php endif; ?>
@@ -426,6 +507,36 @@ include __DIR__ . '/partials/app_head.php';
             });
           </script>
         <?php endif; ?>
+
+        <script>
+        (function () {
+          var sel = document.getElementById('selAbaViagem');
+
+          function aplicarAba(nome) {
+            if (sel) {
+              sel.value = nome;
+            }
+            var inputs = document.querySelectorAll('form input[name="aba"]');
+            for (var i = 0; i < inputs.length; i++) {
+              inputs[i].value = nome;
+            }
+          }
+
+          var btns = document.querySelectorAll('#abasViagem [data-bs-toggle="tab"]');
+          for (var i = 0; i < btns.length; i++) {
+            btns[i].addEventListener('shown.bs.tab', function () {
+              aplicarAba(this.getAttribute('data-valor'));
+            });
+          }
+
+          if (sel) {
+            sel.addEventListener('change', function () {
+              var btn = document.querySelector('#abasViagem [data-valor="' + sel.value + '"]');
+              if (btn && window.bootstrap) bootstrap.Tab.getOrCreateInstance(btn).show();
+            });
+          }
+        })();
+        </script>
 
         <script>
           document.addEventListener('DOMContentLoaded', function () {

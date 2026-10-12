@@ -16,8 +16,8 @@
       <a class="bar-btn primary" href="compras.php">
         <i class="fa-solid fa-cart-shopping"></i>Compra
       </a>
-      <a class="bar-btn" href="#" data-alert="Módulo de vendas em construção.">
-        <i class="fa-solid fa-store"></i>Venda
+      <a class="bar-btn" href="loja.php" title="Loja">
+        <i class="fa-solid fa-store"></i>Loja
       </a>
     </nav>
   </div>

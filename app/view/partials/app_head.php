@@ -6,13 +6,17 @@
 // =====================================================================
 $badgeViagens  = $badgeViagens ?? 0;
 $badgeCompras  = $badgeCompras ?? 0;
-$badgeLoja     = $badgeLoja ?? 0;
+$badgeEstoque  = $badgeEstoque ?? 0;
+$badgePedidos  = $badgePedidos ?? 0;
 
 $ativoPainel   = $paginaAtual === 'painel'   ? 'active' : '';
 $ativoViagens  = $paginaAtual === 'viagens'  ? 'active' : '';
 $ativoGastos   = $paginaAtual === 'gastos'   ? 'active' : '';
 $ativoCompras  = $paginaAtual === 'compras'  ? 'active' : '';
+$ativoEstoque  = $paginaAtual === 'estoque'  ? 'active' : '';
 $ativoLoja     = $paginaAtual === 'loja'     ? 'active' : '';
+$ativoBalanco  = $paginaAtual === 'balanco'  ? 'active' : '';
+$ativoConfig   = $paginaAtual === 'configuracoes' ? 'active' : '';
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR" data-bs-theme="light">
@@ -71,18 +75,24 @@ $ativoLoja     = $paginaAtual === 'loja'     ? 'active' : '';
             </a>
           </li>
           <li class="nav-item">
+            <a href="estoque.php" class="<?= $ativoEstoque ?>">
+              <i class="fa-solid fa-boxes-stacked"></i><span>Estoque</span>
+              <?php if ($badgeEstoque > 0): ?><span class="badge-opt"><?= (int) $badgeEstoque ?></span><?php endif; ?>
+            </a>
+          </li>
+          <li class="nav-item">
             <a href="loja.php" class="<?= $ativoLoja ?>">
               <i class="fa-solid fa-store"></i><span>Loja</span>
-              <?php if ($badgeLoja > 0): ?><span class="badge-opt"><?= (int) $badgeLoja ?></span><?php endif; ?>
+              <?php if ($badgePedidos > 0): ?><span class="badge-opt"><?= (int) $badgePedidos ?></span><?php endif; ?>
             </a>
           </li>
         </ul>
 
-        <p class="sidebar-section-label">Vendas &amp; Analítico</p>
+        <p class="sidebar-section-label">Financeiro &amp; Analítico</p>
         <ul class="nav-group">
           <li class="nav-item">
-            <a href="#" data-alert="Módulo de vendas em construção.">
-              <i class="fa-solid fa-store"></i><span>Vendas</span>
+            <a href="balanco.php" class="<?= $ativoBalanco ?>">
+              <i class="fa-solid fa-scale-balanced"></i><span>Balanço</span>
             </a>
           </li>
           <li class="nav-item">
@@ -91,7 +101,7 @@ $ativoLoja     = $paginaAtual === 'loja'     ? 'active' : '';
             </a>
           </li>
           <li class="nav-item">
-            <a href="#" data-alert="Configurações em construção.">
+            <a href="configuracoes.php" class="<?= $ativoConfig ?>">
               <i class="fa-solid fa-gear"></i><span>Configurações</span>
             </a>
           </li>
@@ -99,15 +109,17 @@ $ativoLoja     = $paginaAtual === 'loja'     ? 'active' : '';
       </nav>
 
       <div class="sidebar-user">
-        <span class="avatar">
-          <div class="brand-logo" style="width:38px;height:38px;font-size:.95rem;border-radius:50%;">
-            <i class="fa-regular fa-user"></i>
+        <a class="sidebar-user-link" href="perfil.php" title="Editar perfil">
+          <span class="avatar">
+            <div class="brand-logo" style="width:38px;height:38px;font-size:.95rem;border-radius:50%;">
+              <i class="fa-regular fa-user"></i>
+            </div>
+          </span>
+          <div class="meta">
+            <strong><?= htmlspecialchars($nomeUsuario) ?></strong>
+            <small><?= htmlspecialchars($emailUsuario) ?></small>
           </div>
-        </span>
-        <div class="meta">
-          <strong><?= htmlspecialchars($nomeUsuario) ?></strong>
-          <small><?= htmlspecialchars($emailUsuario) ?></small>
-        </div>
+        </a>
         <a class="logout" href="../controller/AuthController.php?acao=logout" title="Sair">
           <i class="fa-solid fa-arrow-right-from-bracket"></i>
         </a>
@@ -141,7 +153,7 @@ $ativoLoja     = $paginaAtual === 'loja'     ? 'active' : '';
             <i class="fa-regular fa-bell"></i>
             <span class="dot"></span>
           </button>
-          <button class="avatar-btn ms-1" type="button" data-alert="Perfil em construção.">
+          <a class="avatar-btn ms-1" href="perfil.php" title="Editar perfil">
             <span class="avatar">
               <span class="brand-logo" style="width:38px;height:38px;font-size:.95rem;border-radius:50%;">
                 <i class="fa-regular fa-user"></i>
@@ -151,7 +163,7 @@ $ativoLoja     = $paginaAtual === 'loja'     ? 'active' : '';
               <strong style="font-size:.86rem;"><?= htmlspecialchars($nomeUsuario) ?></strong>
               <small><?= htmlspecialchars($perfilLabel) ?></small>
             </span>
-          </button>
+          </a>
         </div>
       </header>
 

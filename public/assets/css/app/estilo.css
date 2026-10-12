@@ -387,6 +387,16 @@ body {
 .sidebar-user .meta strong { display: block; font-size: .88rem; }
 .sidebar-user .meta small { color: #8fb4ff; font-size: .75rem; }
 
+.sidebar-user .sidebar-user-link {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  flex: 1;
+  color: inherit;
+  text-decoration: none;
+}
+
 .sidebar-user .logout {
   margin-left: auto;
   color: #ff9d9d;
@@ -464,11 +474,13 @@ body {
   padding: 0;
 }
 
+.topbar a.avatar-btn { text-decoration: none; }
+
 .topbar .avatar-btn .meta { text-align: left; line-height: 1.15; }
 .topbar .avatar-btn .meta small { display: block; color: var(--app-text-muted); font-size: .74rem; }
 
 /* ---- Main area ---- */
-.main-area { margin-left: 264px; width: 100%; transition: margin-left .28s ease; }
+.main-area { margin-left: 264px; flex: 1 1 0; min-width: 0; transition: margin-left .28s ease; }
 .app-body.sidebar-collapsed .main-area { margin-left: 78px; }
 
 .main-content {

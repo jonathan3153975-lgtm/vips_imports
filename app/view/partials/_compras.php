@@ -32,7 +32,7 @@ $simples       = $simples ?? false;
     <div class="kpi darkblue h-100">
       <small>Total de compras</small>
       <div class="value" style="font-size:1.3rem;"><?= $moeda($totalGeral) ?></div>
-      <div class="footer"><?= (int) $qtdItens ?> item<?= $qtdItens === 1 ? '' : 'ns' ?></div>
+      <div class="footer"><?= (int) $qtdItens ?> <?= $qtdItens === 1 ? 'item' : 'itens' ?></div>
       <i class="fa-solid fa-cart-shopping ico"></i>
     </div>
   </div>
@@ -48,7 +48,7 @@ $simples       = $simples ?? false;
     <div class="kpi green h-100">
       <small>Total de vendas</small>
       <div class="value" style="font-size:1.3rem;"><?= $moeda($totalVendas) ?></div>
-      <div class="footer">disponível após o módulo de vendas</div>
+      <div class="footer">itens já vendidos na loja</div>
       <i class="fa-solid fa-sack-dollar ico"></i>
     </div>
   </div>
@@ -71,7 +71,7 @@ $simples       = $simples ?? false;
     </h5>
     <div class="section-head-actions d-flex align-items-center gap-2">
       <span class="badge text-bg-light border px-2 py-1" style="font-size:.72rem;">
-        <?= (int) $qtdItens ?> item<?= $qtdItens === 1 ? '' : 's' ?>
+        <?= (int) $qtdItens ?> <?= $qtdItens === 1 ? 'item' : 'itens' ?>
         · <?= (int) $marcasDistintas ?> marca<?= $marcasDistintas === 1 ? '' : 's' ?>
       </span>
       <button type="button" class="btn btn-brand-red btn-round btn-sm fw-semibold"
@@ -159,22 +159,32 @@ $simples       = $simples ?? false;
               </td>
               <?php endif; ?>
               <td class="text-end text-nowrap">
-                <?php if (!$simples): ?>
-                <button type="button" class="btn btn-sm btn-light border btn-editar" title="Editar item"
-                        data-item='<?= $editarData ?>'>
-                  <i class="fa-solid fa-pen"></i>
-                </button>
-                <?php endif; ?>
-                <form action="../controller/CompraController.php" method="post" class="d-inline"
-                      onsubmit="return confirm('Excluir este item?');">
-                  <input type="hidden" name="acao" value="excluir">
-                  <input type="hidden" name="origem" value="<?= htmlspecialchars($origem) ?>">
-                  <input type="hidden" name="id" value="<?= (int) $i['id'] ?>">
-                  <input type="hidden" name="viagem_id" value="<?= $viagemId ?>">
-                  <button type="submit" class="btn btn-sm btn-light border text-danger" title="Excluir item">
-                    <i class="fa-solid fa-trash"></i>
+                <?php if ($i['publicada']): ?>
+                  <span class="status-badge <?= $i['vendido'] ? 'status-concluida' : 'status-ativa' ?>">
+                    <span class="pt"></span><?= $i['vendido'] ? 'Vendido' : 'Publicado' ?>
+                  </span>
+                  <?php if ($i['preco_venda'] !== null): ?>
+                    <div class="text-muted" style="font-size:.72rem;">Venda: <?= $moeda($i['preco_venda']) ?></div>
+                  <?php endif; ?>
+                <?php else: ?>
+                  <?php if (!$simples): ?>
+                  <button type="button" class="btn btn-sm btn-light border btn-editar" title="Editar item"
+                          data-item='<?= $editarData ?>'>
+                    <i class="fa-solid fa-pen"></i>
                   </button>
-                </form>
+                  <?php endif; ?>
+                  <form action="../controller/CompraController.php" method="post" class="d-inline"
+                        onsubmit="return confirm('Excluir este item?');">
+                    <input type="hidden" name="acao" value="excluir">
+                    <input type="hidden" name="origem" value="<?= htmlspecialchars($origem) ?>">
+                    <input type="hidden" name="aba" value="<?= htmlspecialchars($aba ?? '') ?>">
+                    <input type="hidden" name="id" value="<?= (int) $i['id'] ?>">
+                    <input type="hidden" name="viagem_id" value="<?= $viagemId ?>">
+                    <button type="submit" class="btn btn-sm btn-light border text-danger" title="Excluir item">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </form>
+                <?php endif; ?>
               </td>
             </tr>
           <?php endforeach; ?>
@@ -222,37 +232,13 @@ $simples       = $simples ?? false;
               <?php if ($i['marca']): ?>
                 <span class="text-muted" style="font-size:.72rem;display:block;"><?= htmlspecialchars($i['marca']) ?></span>
               <?php endif; ?>
+              <span class="text-muted" style="font-size:.72rem;">
+                <?= htmlspecialchars($i['loja'] ?? 'Sem loja') ?> · <?= (int) $i['quantidade'] ?>x
+              </span>
             </div>
             <div class="gasto-card-date"><?= date('d/m/Y', strtotime($i['data_compra'])) ?></div>
           </div>
           <div class="gasto-card-bottom gasto-card-bottom--stacked">
-            <div class="gasto-card-actions">
-              <span class="text-muted" style="font-size:.74rem;">
-                <?= htmlspecialchars($i['loja'] ?? 'Sem loja') ?> · <?= (int) $i['quantidade'] ?>x
-              </span>
-              <?php if (!$simples): ?>
-              <button type="button" class="btn btn-sm btn-light border btn-fotos"
-                      data-bs-toggle="modal" data-bs-target="#modalFotos"
-                      data-nome="<?= htmlspecialchars($i['produto'], ENT_QUOTES) ?>"
-                      data-id="<?= (int) $i['id'] ?>"
-                      data-fotos='<?= $fotosJson ?>'>
-                <i class="fa-solid fa-images me-1"></i>Fotos (<?= $nFotos ?>)
-              </button>
-              <button type="button" class="btn btn-sm btn-light border btn-editar" data-item='<?= $editarData ?>'>
-                <i class="fa-solid fa-pen me-1"></i>Editar
-              </button>
-              <?php endif; ?>
-              <form action="../controller/CompraController.php" method="post" class="m-0"
-                    onsubmit="return confirm('Excluir este item?');">
-                <input type="hidden" name="acao" value="excluir">
-                <input type="hidden" name="origem" value="<?= htmlspecialchars($origem) ?>">
-                <input type="hidden" name="id" value="<?= (int) $i['id'] ?>">
-                <input type="hidden" name="viagem_id" value="<?= $viagemId ?>">
-                <button type="submit" class="btn btn-sm btn-light border text-danger w-100 text-nowrap">
-                  <i class="fa-solid fa-trash me-1"></i>Excluir
-                </button>
-              </form>
-            </div>
             <div class="gasto-card-value">
               <div style="white-space:nowrap;"><?= $fmt($i['moeda'], $i['valor']) ?>
                 <?php if ($i['moeda'] === 'USD'): ?>
@@ -260,6 +246,43 @@ $simples       = $simples ?? false;
                 <?php endif; ?>
               </div>
             </div>
+            <?php if ($i['publicada']): ?>
+              <div class="d-flex justify-content-between align-items-center w-100 gap-2">
+                <span class="status-badge <?= $i['vendido'] ? 'status-concluida' : 'status-ativa' ?>">
+                  <span class="pt"></span><?= $i['vendido'] ? 'Vendido' : 'Publicado' ?>
+                </span>
+                <?php if ($i['preco_venda'] !== null): ?>
+                  <span class="text-muted" style="font-size:.74rem;">Venda: <?= $moeda($i['preco_venda']) ?></span>
+                <?php endif; ?>
+              </div>
+            <?php else: ?>
+              <div class="gasto-card-actions">
+                <?php if (!$simples): ?>
+                <button type="button" class="btn btn-sm btn-light border btn-fotos" title="Fotos"
+                        data-bs-toggle="modal" data-bs-target="#modalFotos"
+                        data-nome="<?= htmlspecialchars($i['produto'], ENT_QUOTES) ?>"
+                        data-id="<?= (int) $i['id'] ?>"
+                        data-fotos='<?= $fotosJson ?>'>
+                  <i class="fa-solid fa-images"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-light border btn-editar" title="Editar item"
+                        data-item='<?= $editarData ?>'>
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <?php endif; ?>
+                <form action="../controller/CompraController.php" method="post" class="m-0"
+                      onsubmit="return confirm('Excluir este item?');">
+                  <input type="hidden" name="acao" value="excluir">
+                  <input type="hidden" name="origem" value="<?= htmlspecialchars($origem) ?>">
+                  <input type="hidden" name="aba" value="<?= htmlspecialchars($aba ?? '') ?>">
+                  <input type="hidden" name="id" value="<?= (int) $i['id'] ?>">
+                  <input type="hidden" name="viagem_id" value="<?= $viagemId ?>">
+                  <button type="submit" class="btn btn-sm btn-light border text-danger w-100" title="Excluir item">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </form>
+              </div>
+            <?php endif; ?>
           </div>
         </div>
       <?php endforeach; ?>
@@ -286,6 +309,7 @@ $simples       = $simples ?? false;
       <form action="../controller/CompraController.php" method="post">
         <input type="hidden" name="acao" value="criar">
         <input type="hidden" name="origem" value="<?= htmlspecialchars($origem) ?>">
+        <input type="hidden" name="aba" value="<?= htmlspecialchars($aba ?? '') ?>">
         <input type="hidden" name="viagem_id" value="<?= $viagemId ?>">
 
         <div class="modal-header border-0 pb-0">

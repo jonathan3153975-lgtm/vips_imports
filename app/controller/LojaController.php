@@ -1,13 +1,12 @@
 <?php
 // =====================================================================
-// VIP Imports — Controller: Loja
-// Ações: publicar, remover (redirect p/ loja.php)
-//        descrever (JSON — IA lê as fotos do item e sugere a ficha)
+// VIP Imports — Controller: Loja (loja virtual)
+// Ações: pedido_status (muda o status de um pedido)
+//        renovar_token (gera um novo link público da loja)
 // =====================================================================
 
-require_once dirname(__DIR__) . '/model/Loja.php';
-require_once dirname(__DIR__) . '/model/Compra.php';
-require_once dirname(__DIR__) . '/model/LeituraReceita.php';
+require_once dirname(__DIR__) . '/model/Pedido.php';
+require_once dirname(__DIR__) . '/model/UsuarioConfig.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
@@ -20,180 +19,50 @@ if (!isset($_SESSION['usuario'])) {
 
 $usuarioId = (int) $_SESSION['usuario']['id'];
 
-const DIR_FOTOS = __DIR__ . '/../../public/uploads/compras';
+$abasValidas = ['produtos', 'pedidos', 'concluidos'];
+$aba = (string) ($_POST['aba'] ?? $_GET['aba'] ?? 'produtos');
+if (!in_array($aba, $abasValidas, true)) {
+    $aba = 'produtos';
+}
 
-function redir(string $query): void
+function redir(string $query, string $aba = 'produtos'): void
 {
-    header('Location: ../view/loja.php' . ($query === '' ? '' : '?' . $query));
+    $abasValidas = ['produtos', 'pedidos', 'concluidos'];
+    if (!in_array($aba, $abasValidas, true)) {
+        $aba = 'produtos';
+    }
+    header('Location: ../view/loja.php' . ($query === '' ? '?' : '?' . $query . '&') . 'aba=' . $aba);
     exit;
 }
 
-function normalizarValor($entrada): ?float
-{
-    if (is_array($entrada)) {
-        return null;
-    }
-
-    $v = trim((string) $entrada);
-    if ($v === '') {
-        return null;
-    }
-
-    $v = str_replace(['R$', 'US$', ' ', "\xc2\xa0"], '', $v);
-
-    if (str_contains($v, ',')) {
-        $v = str_replace('.', '', $v);
-        $v = str_replace(',', '.', $v);
-    }
-
-    return is_numeric($v) ? (float) $v : null;
-}
-
-$model = new Loja();
-
 switch ($_POST['acao'] ?? '') {
-    case 'publicar':
-        $compraId   = (int) ($_POST['compra_id'] ?? 0);
-        $produto    = trim((string) ($_POST['produto'] ?? ''));
-        $marca      = trim((string) ($_POST['marca'] ?? ''));
-        $categoria  = trim((string) ($_POST['categoria'] ?? ''));
-        $descricao  = trim((string) ($_POST['descricao'] ?? ''));
-        $preco      = normalizarValor($_POST['preco'] ?? null);
-        $sugerido   = normalizarValor($_POST['preco_sugerido'] ?? null);
+    case 'pedido_status':
+        $pedidoId = (int) ($_POST['id'] ?? 0);
+        $status   = (string) ($_POST['status'] ?? '');
 
-        if ($compraId <= 0 || $produto === '' || $categoria === '') {
-            redir('erro=campos');
-        }
-        if ($preco === null || $preco <= 0) {
-            redir('erro=preco');
+        if ($pedidoId <= 0 || !in_array($status, Pedido::STATUS, true)) {
+            redir('erro=campos', $aba);
         }
 
         try {
-            $ok = $model->publicar(
-                $usuarioId,
-                $compraId,
-                $produto,
-                $marca === '' ? null : mb_substr($marca, 0, 80),
-                mb_substr($categoria, 0, 40),
-                $descricao === '' ? null : mb_substr($descricao, 0, 500),
-                round($preco, 2),
-                $sugerido !== null && $sugerido > 0 ? round($sugerido, 2) : null
-            );
+            $ok = (new Pedido())->atualizarStatus($pedidoId, $usuarioId, $status);
         } catch (Throwable $e) {
-            redir('erro=sistema');
+            redir('erro=sistema', $aba);
         }
 
-        redir($ok ? 'msg=publicado' : 'erro=publicado');
+        redir($ok ? 'msg=status' : 'erro=pedido', 'pedidos');
         break;
 
-    case 'remover':
-        $produtoId = (int) ($_POST['id'] ?? 0);
-        if ($produtoId <= 0) {
-            redir('erro=campos');
-        }
-
+    case 'renovar_token':
         try {
-            $ok = $model->remover($produtoId, $usuarioId);
+            (new UsuarioConfig())->renovarToken($usuarioId);
         } catch (Throwable $e) {
-            redir('erro=sistema');
+            redir('erro=sistema', $aba);
         }
 
-        redir($ok ? 'msg=removido' : 'erro=loja');
+        redir('msg=token', $aba);
         break;
-
-    case 'marcar_vendido':
-        $produtoId = (int) ($_POST['id'] ?? 0);
-        $vendido   = ($_POST['vendido'] ?? '0') === '1';
-
-        if ($produtoId <= 0) {
-            redir('erro=campos');
-        }
-
-        try {
-            $ok = $model->marcarVendido($produtoId, $usuarioId, $vendido);
-        } catch (Throwable $e) {
-            redir('erro=sistema');
-        }
-
-        redir($ok ? 'msg=vendido' : 'erro=loja');
-        break;
-
-    case 'descrever':
-        header('Content-Type: application/json; charset=utf-8');
-        header('Cache-Control: no-store');
-
-        $compraId = (int) ($_POST['compra_id'] ?? 0);
-        if ($compraId <= 0) {
-            http_response_code(400);
-            echo json_encode(['ok' => false, 'erro' => 'campos']);
-            exit;
-        }
-
-        $compra = (new Compra())->buscarPorId($compraId, $usuarioId);
-        if ($compra === null) {
-            http_response_code(404);
-            echo json_encode(['ok' => false, 'erro' => 'loja']);
-            exit;
-        }
-
-        $fotos = $model->fotosDoItem($compraId, $usuarioId);
-        if (count($fotos) === 0) {
-            echo json_encode(['ok' => false, 'erro' => 'sem_fotos']);
-            exit;
-        }
-
-        $finfo  = new finfo(FILEINFO_MIME_TYPE);
-        $mimes  = ['image/jpeg', 'image/png', 'image/webp'];
-        $imagens = [];
-
-        foreach ($fotos as $foto) {
-            $caminho = DIR_FOTOS . '/' . $foto['arquivo'];
-            if (!is_file($caminho)) {
-                continue;
-            }
-
-            $mime  = (string) $finfo->file($caminho);
-            $bytes = file_get_contents($caminho);
-            if (!in_array($mime, $mimes, true) || $bytes === false || $bytes === '') {
-                continue;
-            }
-
-            $imagens[] = ['mime' => $mime, 'base64' => base64_encode($bytes)];
-        }
-
-        if (count($imagens) === 0) {
-            echo json_encode(['ok' => false, 'erro' => 'sem_fotos']);
-            exit;
-        }
-
-        if (function_exists('set_time_limit')) {
-            set_time_limit(120);
-        }
-
-        try {
-            $dados = (new LeituraReceita())->lerDescricao($imagens);
-        } catch (Throwable $e) {
-            http_response_code(422);
-            echo json_encode(['ok' => false, 'erro' => 'api', 'mensagem' => $e->getMessage()]);
-            exit;
-        }
-
-        if ($dados === null) {
-            http_response_code(422);
-            echo json_encode([
-                'ok'       => false,
-                'erro'     => 'config',
-                'mensagem' => 'Chave da API Gemini não configurada. Adicione GEMINI_API_KEY no .env.',
-            ]);
-            exit;
-        }
-
-$precos = $model->precosSugeridos([$compraId], $usuarioId);
-$precoSugerido = $precos[$compraId]['sugerido'] ?? null;
-
-echo json_encode(['ok' => true, 'dados' => $dados, 'preco_sugerido' => $precoSugerido]);
-exit;
 
     default:
-        redir('');
+        redir('', $aba);
 }

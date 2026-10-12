@@ -1,16 +1,16 @@
 <?php
 // =====================================================================
-// VIP Imports — Model: Loja
-// Gerencia a publicação de itens comprados na "loja" (vitrine). Ao
-// publicar, o item NÃO é excluído de compras — apenas marcado como
-// publicada, deixando de aparecer nas listagens de compra.
+// VIP Imports — Model: Estoque
+// Gerencia o estoque de itens comprados e a publicação deles na loja
+// (vitrine). Ao publicar, o item NÃO é excluído de compras — apenas
+// marcado como publicada, deixando de aparecer nas listagens de compra.
 // =====================================================================
 
 require_once dirname(__DIR__, 2) . '/database/conexao.php';
 require_once dirname(__DIR__) . '/model/Compra.php';
 require_once dirname(__DIR__) . '/model/Gasto.php';
 
-class Loja
+class Estoque
 {
     private PDO $conn;
 
@@ -165,6 +165,7 @@ class Loja
         $sql = 'SELECT p.id, p.compra_id, p.produto, p.marca, p.categoria, p.descricao,
                        p.preco, p.preco_sugerido, p.publicado_em,
                        p.vendido, p.vendido_em,
+                       p.reservado, p.reservado_em, p.reservado_pedido_id,
                        c.quantidade, c.valor, c.moeda, c.valor_brl,
                        v.destino AS viagem_destino
                 FROM loja_produtos p
@@ -191,6 +192,9 @@ class Loja
             $item['preco_sugerido'] = $item['preco_sugerido'] !== null
                 ? (float) $item['preco_sugerido'] : null;
             $item['vendido']    = (bool) $item['vendido'];
+            $item['reservado']  = (bool) $item['reservado'];
+            $item['reservado_pedido_id'] = $item['reservado_pedido_id'] !== null
+                ? (int) $item['reservado_pedido_id'] : null;
             $item['custo_item'] = round((float) $item['valor_brl'] * max(1, (int) $item['quantidade']), 2);
         }
         unset($item);
@@ -204,7 +208,8 @@ class Loja
     public function marcarVendido(int $produtoId, int $usuarioId, bool $vendido): bool
     {
         $sql = 'UPDATE loja_produtos
-                SET vendido = :v, vendido_em = IF(:vv, NOW(), NULL)
+                SET vendido = :v, vendido_em = IF(:vv, NOW(), NULL),
+                    reservado = 0, reservado_em = NULL, reservado_pedido_id = NULL
                 WHERE id = :id AND usuario_id = :u';
 
         $stmt = $this->conn->prepare($sql);
@@ -215,6 +220,45 @@ class Loja
         $stmt->execute();
 
         return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Atualiza a ficha de um produto publicado na loja (só para o dono).
+     */
+    public function atualizarItem(
+        int $produtoId,
+        int $usuarioId,
+        string $produto,
+        ?string $marca,
+        string $categoria,
+        ?string $descricao,
+        float $preco
+    ): bool {
+        $chk = $this->conn->prepare(
+            'SELECT id FROM loja_produtos WHERE id = :id AND usuario_id = :u LIMIT 1'
+        );
+        $chk->bindValue(':id', $produtoId, PDO::PARAM_INT);
+        $chk->bindValue(':u', $usuarioId, PDO::PARAM_INT);
+        $chk->execute();
+        if ($chk->fetchColumn() === false) {
+            return false;
+        }
+
+        $sql = 'UPDATE loja_produtos
+                SET produto = :p, marca = :m, categoria = :c, descricao = :d, preco = :pr
+                WHERE id = :id AND usuario_id = :u';
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindValue(':p', mb_substr($produto, 0, 160), PDO::PARAM_STR);
+        $stmt->bindValue(':m', $marca, $marca === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindValue(':c', mb_substr($categoria, 0, 40), PDO::PARAM_STR);
+        $stmt->bindValue(':d', $descricao, $descricao === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindValue(':pr', $preco);
+        $stmt->bindValue(':id', $produtoId, PDO::PARAM_INT);
+        $stmt->bindValue(':u', $usuarioId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return true;
     }
 
     /**
@@ -335,6 +379,25 @@ class Loja
 
         $compra = $stmt->fetch(PDO::FETCH_ASSOC);
         return $compra === false ? null : $compra;
+    }
+
+    /**
+     * Somatório do valor de venda (preço) dos itens JÁ VENDIDOS de uma viagem.
+     */
+    public function totalVendidoPorViagem(int $viagemId, int $usuarioId): float
+    {
+        $sql = 'SELECT COALESCE(SUM(p.preco), 0)
+                FROM loja_produtos p
+                INNER JOIN compras c ON c.id = p.compra_id
+                INNER JOIN viagens v ON v.id = c.viagem_id
+                WHERE v.id = :v AND v.usuario_id = :u AND p.vendido = 1';
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindValue(':v', $viagemId, PDO::PARAM_INT);
+        $stmt->bindValue(':u', $usuarioId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return (float) $stmt->fetchColumn();
     }
 
     /**

@@ -17,10 +17,15 @@ if (!isset($_SESSION['usuario'])) {
 
 $usuarioId = (int) $_SESSION['usuario']['id'];
 $acao      = $_POST['acao'] ?? $_GET['acao'] ?? '';
+$aba       = (string) ($_POST['aba'] ?? $_GET['aba'] ?? '');
 
 // Redireciona de volta para a tela de viagens.
 function voltar(string $query = ''): void
 {
+    global $aba;
+    if ($aba !== '') {
+        $query = ($query === '' ? '?' : $query . '&') . 'aba=' . urlencode($aba);
+    }
     header('Location: ../view/viagens.php' . $query);
     exit;
 }

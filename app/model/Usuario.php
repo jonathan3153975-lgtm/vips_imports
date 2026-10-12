@@ -46,4 +46,79 @@ class Usuario
 
         return $stmt->execute();
     }
+
+    /**
+     * Busca um usuário pelo id (dados exibidos no perfil).
+     */
+    public function buscarPorId(int $id): ?array
+    {
+        $sql = 'SELECT id, nome, email, perfil, ativo, ultimo_acesso, criado_em
+                FROM usuarios
+                WHERE id = :id
+                LIMIT 1';
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $usuario === false ? null : $usuario;
+    }
+
+    /**
+     * Verifica se o e-mail já pertence a outro usuário.
+     */
+    public function emailEmUso(string $email, int $ignorarId = 0): bool
+    {
+        $sql = 'SELECT 1 FROM usuarios WHERE email = :email AND id <> :id LIMIT 1';
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindValue(':email', $email, PDO::PARAM_STR);
+        $stmt->bindValue(':id', $ignorarId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /**
+     * Atualiza nome e e-mail do usuário.
+     */
+    public function atualizarDados(int $id, string $nome, string $email): bool
+    {
+        $sql = 'UPDATE usuarios SET nome = :n, email = :e WHERE id = :id';
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindValue(':n', mb_substr(trim($nome), 0, 120), PDO::PARAM_STR);
+        $stmt->bindValue(':e', mb_substr(trim($email), 0, 160), PDO::PARAM_STR);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
+    /**
+     * Confere a senha atual do usuário.
+     */
+    public function senhaConfere(int $id, string $senha): bool
+    {
+        $stmt = $this->conn->prepare('SELECT senha FROM usuarios WHERE id = :id LIMIT 1');
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $hash = $stmt->fetchColumn();
+        return $hash !== false && password_verify($senha, (string) $hash);
+    }
+
+    /**
+     * Define uma nova senha (armazenada com hash).
+     */
+    public function atualizarSenha(int $id, string $novaSenha): bool
+    {
+        $sql = 'UPDATE usuarios SET senha = :s WHERE id = :id';
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindValue(':s', password_hash($novaSenha, PASSWORD_DEFAULT), PDO::PARAM_STR);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
 }

@@ -12,6 +12,7 @@ if (!isset($_SESSION['usuario'])) {
 require_once dirname(__DIR__) . '/model/Viagem.php';
 require_once dirname(__DIR__) . '/model/Gasto.php';
 require_once dirname(__DIR__) . '/model/Compra.php';
+require_once dirname(__DIR__) . '/model/Estoque.php';
 
 $usuario      = $_SESSION['usuario'];
 $usuarioId    = (int) $usuario['id'];
@@ -83,6 +84,7 @@ if ($viagemSelecionada) {
     $qtdItens        = array_sum(array_column($itens, 'quantidade'));
     $marcasDistintas = $compraModel->contarMarcas((int) $viagemSelecionada['id'], $usuarioId);
     $custoViagem     = (new Gasto())->totalPorViagem((int) $viagemSelecionada['id'], $usuarioId);
+    $totalVendas     = (new Estoque())->totalVendidoPorViagem((int) $viagemSelecionada['id'], $usuarioId);
     $saldoViagem     = $totalVendas - ($custoViagem + $totalGeral);
 }
 

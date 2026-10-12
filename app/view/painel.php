@@ -113,9 +113,9 @@ include __DIR__ . '/partials/app_head.php';
             <span class="muted small">Visão financeira de todas as viagens</span>
           </div>
           <div class="actions desktop-only">
-            <button class="btn btn-outline-danger btn-round" type="button" data-alert="Relatório em construção.">
+            <a href="balanco.php" class="btn btn-outline-danger btn-round">
               <i class="fa-solid fa-file-arrow-down me-1"></i>Relatório
-            </button>
+            </a>
             <a href="viagens.php" class="btn btn-brand-blue btn-round">
               <i class="fa-solid fa-plus me-1"></i>Nova viagem
             </a>

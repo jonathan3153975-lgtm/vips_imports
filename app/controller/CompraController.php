@@ -20,12 +20,18 @@ $usuarioId = (int) $_SESSION['usuario']['id'];
 $acao      = $_POST['acao'] ?? $_GET['acao'] ?? '';
 $viagemId  = (int) ($_POST['viagem_id'] ?? $_GET['viagem_id'] ?? 0);
 $origem    = ($_POST['origem'] ?? $_GET['origem'] ?? 'compras') === 'viagens' ? 'viagens' : 'compras';
+$aba       = (string) ($_POST['aba'] ?? $_GET['aba'] ?? '');
 
 const DIR_FOTOS = __DIR__ . '/../../public/uploads/compras';
 
 // Redireciona de volta para a tela de origem, preservando a viagem.
 function redir(string $origem, int $viagemId, string $query): void
 {
+    global $aba;
+    if ($aba !== '') {
+        $query = $query === '' ? 'aba=' . urlencode($aba) : $query . '&aba=' . urlencode($aba);
+    }
+
     $sufixo = $query === '' ? '' : '?' . $query;
 
     if ($origem === 'viagens') {
@@ -79,6 +85,7 @@ function dataValida(?string $data): ?string
  */
 function moedaCotacao(int $viagemId, string $moedaPost, ?float $cotacao): array
 {
+    global $origem;
     $moeda = strtoupper($moedaPost);
     $moeda = in_array($moeda, Compra::MOEDAS, true) ? $moeda : 'BRL';
 
