@@ -205,8 +205,10 @@ body {
 .login-form-side {
   flex: 1 1 48%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1.1rem;
   padding: 2.5rem;
   background: var(--app-bg);
   position: relative;
@@ -260,6 +262,15 @@ body {
 }
 
 .theme-switch-btn:hover { transform: translateY(-2px); color: var(--brand-blue-2); }
+
+/* ---- Login: ajustes para telas pequenas ---- */
+@media (max-width: 767.98px) {
+  .login-wrap { min-height: 100dvh; }
+  .login-form-side { padding: 1.1rem 1rem 1.5rem; }
+  .login-card { max-width: 100%; }
+  .login-card .card-body { padding: 1.6rem 1.25rem; }
+  .login-card h2 { font-size: 1.3rem; }
+}
 
 /* ============================ Layout ============================ */
 

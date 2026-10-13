@@ -79,7 +79,7 @@ $sucesso = (($_GET['msg'] ?? '') === 'logout') ? 'Sessão encerrada com sucesso.
 
       <div class="card login-card card-br">
         <div class="card-body">
-          <div class="text-center mb-4 d-md-none">
+          <div class="text-center mb-4 d-lg-none">
             <div class="brand-lockup justify-content-center">
               <div class="brand-logo"><i class="fa-solid fa-plane-up"></i></div>
               <div class="brand-name" style="color:var(--app-text)">VIP Imports<small class="text-brand-blue">Viagens · Compras · Vendas</small></div>
@@ -147,9 +147,6 @@ $sucesso = (($_GET['msg'] ?? '') === 'logout') ? 'Sessão encerrada com sucesso.
         </div>
       </div>
 
-      <p class="text-center mt-3" style="font-size:.75rem; color:var(--app-text-muted);">
-        VIP Imports · v0.1 — protótipo visual
-      </p>
     </main>
   </div>
 
