@@ -10,3 +10,5 @@ $destino = isset($_SESSION['usuario'])
 
 header('Location: ' . $destino);
 exit;
+
+
