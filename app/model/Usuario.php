@@ -121,4 +121,48 @@ class Usuario
 
         return $stmt->execute();
     }
+
+    /**
+     * Lista todos os usuários (gestão do master).
+     */
+    public function listar(): array
+    {
+        $sql = 'SELECT id, nome, email, perfil, ativo, ultimo_acesso, criado_em
+                FROM usuarios
+                ORDER BY FIELD(perfil, "master", "admin", "usuario"), nome ASC';
+
+        $stmt = $this->conn->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Cria um novo usuário. Lança exceção se o e-mail já existir.
+     */
+    public function criar(string $nome, string $email, string $senha, string $perfil = 'usuario', int $ativo = 1): int
+    {
+        $sql = 'INSERT INTO usuarios (nome, email, senha, perfil, ativo)
+                VALUES (:n, :e, :s, :p, :a)';
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindValue(':n', mb_substr(trim($nome), 0, 120), PDO::PARAM_STR);
+        $stmt->bindValue(':e', mb_substr(trim($email), 0, 160), PDO::PARAM_STR);
+        $stmt->bindValue(':s', password_hash($senha, PASSWORD_DEFAULT), PDO::PARAM_STR);
+        $stmt->bindValue(':p', $perfil, PDO::PARAM_STR);
+        $stmt->bindValue(':a', $ativo, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return (int) $this->conn->lastInsertId();
+    }
+
+    /**
+     * Ativa ou bloqueia o acesso de um usuário.
+     */
+    public function definirAtivo(int $id, int $ativo): bool
+    {
+        $stmt = $this->conn->prepare('UPDATE usuarios SET ativo = :a WHERE id = :id');
+        $stmt->bindValue(':a', $ativo, PDO::PARAM_INT);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
 }

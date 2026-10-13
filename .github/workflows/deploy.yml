@@ -1,0 +1,124 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Evita dois deploys simultâneos.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      # O projeto não possui composer.json/vendor (libs de front-end ficam no
+      # servidor). Antes de publicar, garantimos que nenhum arquivo PHP quebrado
+      # vai para produção.
+      - name: Validar sintaxe PHP
+        run: |
+          set -euo pipefail
+          find app public database index.php run_migration.php \
+            -type f -name '*.php' -print0 \
+            | xargs -0 -n1 -P4 php -l
+          echo "Sintaxe PHP OK"
+
+      - name: Configure SSH
+        run: |
+          set -euxo pipefail
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" -H "${{ secrets._HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Validate deploy secrets
+        env:
+          _HOST: ${{ secrets._HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          _USER: ${{ secrets._USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REM_PATH: ${{ secrets.REM_PATH }}
+        run: |
+          set -euo pipefail
+          test -n "$_HOST" || { echo "Secret _HOST ausente"; exit 1; }
+          test -n "$SSH_PORT" || { echo "Secret SSH_PORT ausente"; exit 1; }
+          test -n "$_USER" || { echo "Secret _USER ausente"; exit 1; }
+          test -n "$SSH_PRIVATE_KEY" || { echo "Secret SSH_PRIVATE_KEY ausente"; exit 1; }
+          test -n "$REM_PATH" || { echo "Secret REM_PATH ausente"; exit 1; }
+          case "$SSH_PORT" in
+            ''|*[!0-9]*) echo "Secret SSH_PORT invalido"; exit 1 ;;
+          esac
+          case "$REM_PATH" in
+            /domains/*)
+              echo "REM_PATH invalido para hospedagem compartilhada: $REM_PATH"
+              echo "Use ~/domains/<dominio>/public_html/... ou /home/<usuario>/domains/<dominio>/public_html/..."
+              exit 1
+              ;;
+          esac
+
+      - name: Test SSH
+        env:
+          _HOST: ${{ secrets._HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          _USER: ${{ secrets._USER }}
+        run: |
+          set -euxo pipefail
+          ssh -vvv -i ~/.ssh/deploy_key -p "$SSH_PORT" \
+            -l "$_USER" "$_HOST" \
+            "echo 'SSH conectado com sucesso' && pwd && ls -la"
+
+      - name: Check remote path and permissions
+        env:
+          _HOST: ${{ secrets._HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          _USER: ${{ secrets._USER }}
+          REM_PATH: ${{ secrets.REM_PATH }}
+        run: |
+          set -euxo pipefail
+          ssh -vvv -i ~/.ssh/deploy_key -p "$SSH_PORT" \
+            -l "$_USER" "$_HOST" \
+            "set -euo pipefail; \
+            echo 'HOME remoto:' \"\$HOME\"; \
+            pwd; \
+            test -d '$REM_PATH' || { echo 'REM_PATH nao existe: $REM_PATH'; exit 1; }; \
+            test -w '$REM_PATH' || { echo 'Sem permissao de escrita em REM_PATH: $REM_PATH'; exit 1; }; \
+            ls -la '$REM_PATH'; \
+            touch '$REM_PATH/.deploy_write_test'; \
+            rm -f '$REM_PATH/.deploy_write_test'"
+
+      # Envia o código do repositório. NÃO usamos --delete: .env, uploads e as
+      # libs de front-end (bootstrap, jquery, etc.) vivem apenas no servidor e
+      # seriam apagadas. Os excludes abaixo protegem esses itens.
+      - name: Deploy files
+        env:
+          _HOST: ${{ secrets._HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          _USER: ${{ secrets._USER }}
+          REM_PATH: ${{ secrets.REM_PATH }}
+        run: |
+          set -euxo pipefail
+          rsync -avz --progress --itemize-changes --stats \
+            -e "ssh -i ~/.ssh/deploy_key -p $SSH_PORT" \
+            --exclude=".git/" \
+            --exclude=".github/" \
+            --exclude=".env" \
+            --exclude=".env.*" \
+            --exclude="app/uploads/" \
+            --exclude="app/uploads_suporte/" \
+            --exclude="app/uploads_oficios/" \
+            --exclude="app/uploads_recursos/" \
+            --exclude="public/uploads/" \
+            ./ \
+            "$_USER@$_HOST:$REM_PATH"

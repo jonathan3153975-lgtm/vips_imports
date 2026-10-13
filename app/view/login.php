@@ -15,6 +15,7 @@ $paginaAtual = 'login';
 $mensagens = [
     'campos'      => 'Informe o e-mail e a senha.',
     'credenciais' => 'E-mail ou senha inválidos.',
+    'bloqueado'   => 'Sua conta está bloqueada. Procure o administrador.',
     'sistema'     => 'Não foi possível acessar o sistema. Tente novamente.',
 ];
 

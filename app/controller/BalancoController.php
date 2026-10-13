@@ -6,6 +6,7 @@
 // =====================================================================
 
 require_once dirname(__DIR__) . '/model/Balanco.php';
+require_once dirname(__DIR__) . '/model/UsuarioConfig.php';
 
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
@@ -23,6 +24,10 @@ if ($acao !== 'excel') {
     header('Location: ../view/balanco.php');
     exit;
 }
+
+$cfgEmpresa  = (new UsuarioConfig())->garantir($usuarioId);
+$empresaNome = trim((string) ($cfgEmpresa['loja_nome'] ?? ''));
+$empresaNome = $empresaNome === '' ? (string) $_SESSION['usuario']['nome'] : $empresaNome;
 
 $dataIni    = trim((string) ($_GET['data_ini'] ?? ''));
 $dataFim    = trim((string) ($_GET['data_fim'] ?? ''));
@@ -79,7 +84,7 @@ echo "\xEF\xBB\xBF"; // BOM UTF-8 (acentuação no Excel)
 </head>
 <body>
   <table>
-    <tr><td class="titulo" colspan="8">VIP Imports — Balanço</td></tr>
+    <tr><td class="titulo" colspan="8"><?= htmlspecialchars($empresaNome) ?> — Balanço</td></tr>
     <tr><td class="info" colspan="8"><?= htmlspecialchars($descricaoFiltro) ?></td></tr>
     <tr><td class="info" colspan="8">Emitido em <?= date('d/m/Y H:i') ?></td></tr>
     <tr><td colspan="8"></td></tr>

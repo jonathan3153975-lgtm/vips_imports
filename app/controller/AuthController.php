@@ -40,10 +40,13 @@ function autenticar(): void
 
     if (
         $usuario === null
-        || (int) $usuario['ativo'] !== 1
         || !password_verify($senha, $usuario['senha'])
     ) {
         redirecionar('../view/login.php?erro=credenciais');
+    }
+
+    if ((int) $usuario['ativo'] !== 1) {
+        redirecionar('../view/login.php?erro=bloqueado');
     }
 
     $model->registrarUltimoAcesso((int) $usuario['id']);

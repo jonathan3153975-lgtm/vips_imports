@@ -12,16 +12,27 @@ if (!isset($_SESSION['usuario'])) {
 }
 
 require_once dirname(__DIR__) . '/model/Balanco.php';
+require_once dirname(__DIR__) . '/model/UsuarioConfig.php';
 
 $usuario      = $_SESSION['usuario'];
 $usuarioId    = (int) $usuario['id'];
 $nomeUsuario  = $usuario['nome'];
 $emailUsuario = $usuario['email'];
-$perfilLabel  = ['admin' => 'Administrador', 'usuario' => 'Usuário'][$usuario['perfil']] ?? $usuario['perfil'];
+$perfilLabel  = ['master' => 'Master', 'admin' => 'Administrador', 'usuario' => 'Usuário'][$usuario['perfil']] ?? $usuario['perfil'];
 $titulo       = 'Balanço';
 $paginaAtual  = 'balanco';
 
 $balancoModel = new Balanco();
+
+// Empresa (nome + logotipo) exibida no relatório.
+$cfgEmpresa     = (new UsuarioConfig())->garantir($usuarioId);
+$empresaNome    = trim((string) ($cfgEmpresa['loja_nome'] ?? ''));
+$empresaNome    = $empresaNome === '' ? $nomeUsuario : $empresaNome;
+$empresaArquivo = trim((string) ($cfgEmpresa['loja_logo'] ?? ''));
+$empresaLogo    = null;
+if ($empresaArquivo !== '' && is_file(dirname(__DIR__, 2) . '/public/uploads/logos/' . $empresaArquivo)) {
+    $empresaLogo = '../../public/uploads/logos/' . $empresaArquivo;
+}
 
 $dataIni = trim((string) ($_GET['data_ini'] ?? ''));
 $dataFim = trim((string) ($_GET['data_fim'] ?? ''));
@@ -66,6 +77,11 @@ ob_start();
 ?>
     <style>
       .print-only { display: none; }
+      .company-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.1rem; }
+      .company-logo { width: 64px; height: 64px; object-fit: cover; border-radius: 14px; box-shadow: 0 6px 16px rgba(0,0,0,.15); }
+      .company-head .brand-logo { width: 64px; height: 64px; font-size: 1.7rem; border-radius: 16px; }
+      .company-name { margin: 0; font-size: 1.4rem; font-weight: 700; }
+      .company-sub { color: var(--app-text-muted, #667); font-size: .85rem; }
       @media print {
         @page { size: A4 landscape; margin: 12mm; }
         body { background: #fff !important; }
@@ -77,9 +93,10 @@ ob_start();
         .table-app tbody tr:hover { background: transparent !important; }
         .table-app thead th { color: #000 !important; }
         .table-app tbody td, .table-app thead th { padding: .35rem .5rem !important; font-size: .8rem !important; white-space: normal !important; }
-        .print-title { margin-bottom: 1rem; }
-        .print-title h2 { margin: 0; font-size: 1.2rem; }
-        .print-title small { color: #555; }
+        .company-head { margin-bottom: .9rem; }
+        .company-logo { box-shadow: none !important; }
+        .company-name { font-size: 1.2rem; }
+        .company-sub { color: #555; }
       }
     </style>
 <?php
@@ -104,10 +121,19 @@ include __DIR__ . '/partials/app_head.php';
           </div>
         </div>
 
-        <!-- Cabeçalho de impressão -->
-        <div class="print-only print-title">
-          <h2>VIP Imports — Balanço</h2>
-          <small><?= htmlspecialchars($descricaoFiltro) ?> · Emitido em <?= date('d/m/Y H:i') ?></small>
+        <!-- Cabeçalho da empresa (tela e impressão) -->
+        <div class="company-head">
+          <?php if ($empresaLogo !== null): ?>
+            <img src="<?= htmlspecialchars($empresaLogo) ?>" class="company-logo" alt="Logotipo de <?= htmlspecialchars($empresaNome) ?>">
+          <?php else: ?>
+            <span class="brand-logo"><i class="fa-solid fa-building"></i></span>
+          <?php endif; ?>
+          <div>
+            <h2 class="company-name"><?= htmlspecialchars($empresaNome) ?></h2>
+            <div class="company-sub">
+              Balanço · <?= htmlspecialchars($descricaoFiltro) ?> · Emitido em <?= date('d/m/Y H:i') ?>
+            </div>
+          </div>
         </div>
 
         <!-- Filtros -->

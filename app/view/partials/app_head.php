@@ -17,6 +17,17 @@ $ativoEstoque  = $paginaAtual === 'estoque'  ? 'active' : '';
 $ativoLoja     = $paginaAtual === 'loja'     ? 'active' : '';
 $ativoBalanco  = $paginaAtual === 'balanco'  ? 'active' : '';
 $ativoConfig   = $paginaAtual === 'configuracoes' ? 'active' : '';
+$ativoUsuarios = $paginaAtual === 'usuarios' ? 'active' : '';
+$ehMaster      = ($_SESSION['usuario']['perfil'] ?? '') === 'master';
+
+// Logotipo da empresa (avatar do usuário) — vem da configuração do usuário.
+require_once dirname(__DIR__, 2) . '/model/UsuarioConfig.php';
+$avatarCfg     = (new UsuarioConfig())->garantir((int) ($_SESSION['usuario']['id'] ?? 0));
+$avatarArquivo = trim((string) ($avatarCfg['loja_logo'] ?? ''));
+$avatarLogo    = null;
+if ($avatarArquivo !== '' && is_file(dirname(__DIR__, 3) . '/public/uploads/logos/' . $avatarArquivo)) {
+    $avatarLogo = '../../public/uploads/logos/' . $avatarArquivo;
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR" data-bs-theme="light">
@@ -106,14 +117,29 @@ $ativoConfig   = $paginaAtual === 'configuracoes' ? 'active' : '';
             </a>
           </li>
         </ul>
+
+        <?php if ($ehMaster): ?>
+        <p class="sidebar-section-label">Administração</p>
+        <ul class="nav-group">
+          <li class="nav-item">
+            <a href="usuarios.php" class="<?= $ativoUsuarios ?>">
+              <i class="fa-solid fa-users-gear"></i><span>Usuários</span>
+            </a>
+          </li>
+        </ul>
+        <?php endif; ?>
       </nav>
 
       <div class="sidebar-user">
         <a class="sidebar-user-link" href="perfil.php" title="Editar perfil">
           <span class="avatar">
-            <div class="brand-logo" style="width:38px;height:38px;font-size:.95rem;border-radius:50%;">
-              <i class="fa-regular fa-user"></i>
-            </div>
+            <?php if ($avatarLogo !== null): ?>
+              <img src="<?= htmlspecialchars($avatarLogo) ?>" alt="Logotipo" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">
+            <?php else: ?>
+              <div class="brand-logo" style="width:38px;height:38px;font-size:.95rem;border-radius:50%;">
+                <i class="fa-regular fa-user"></i>
+              </div>
+            <?php endif; ?>
           </span>
           <div class="meta">
             <strong><?= htmlspecialchars($nomeUsuario) ?></strong>
@@ -155,9 +181,13 @@ $ativoConfig   = $paginaAtual === 'configuracoes' ? 'active' : '';
           </button>
           <a class="avatar-btn ms-1" href="perfil.php" title="Editar perfil">
             <span class="avatar">
-              <span class="brand-logo" style="width:38px;height:38px;font-size:.95rem;border-radius:50%;">
-                <i class="fa-regular fa-user"></i>
-              </span>
+              <?php if ($avatarLogo !== null): ?>
+                <img src="<?= htmlspecialchars($avatarLogo) ?>" alt="Logotipo" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">
+              <?php else: ?>
+                <span class="brand-logo" style="width:38px;height:38px;font-size:.95rem;border-radius:50%;">
+                  <i class="fa-regular fa-user"></i>
+                </span>
+              <?php endif; ?>
             </span>
             <span class="meta d-none d-md-block">
               <strong style="font-size:.86rem;"><?= htmlspecialchars($nomeUsuario) ?></strong>

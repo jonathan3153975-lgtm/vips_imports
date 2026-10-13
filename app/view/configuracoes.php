@@ -17,7 +17,7 @@ $usuario      = $_SESSION['usuario'];
 $usuarioId    = (int) $usuario['id'];
 $nomeUsuario  = $usuario['nome'];
 $emailUsuario = $usuario['email'];
-$perfilLabel  = ['admin' => 'Administrador', 'usuario' => 'Usuário'][$usuario['perfil']] ?? $usuario['perfil'];
+$perfilLabel  = ['master' => 'Master', 'admin' => 'Administrador', 'usuario' => 'Usuário'][$usuario['perfil']] ?? $usuario['perfil'];
 $titulo       = 'Configurações';
 $paginaAtual  = 'configuracoes';
 
